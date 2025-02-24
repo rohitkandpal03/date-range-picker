@@ -42,6 +42,7 @@ export const useDateRangeSelection = ({
     }
   }, [selectedRange]);
 
+  //get weekends date
   const getWeekendDates = (start: Date, end: Date): string[] => {
     const weekends: string[] = [];
     const current = new Date(start);
