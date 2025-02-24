@@ -1,0 +1,17 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  margin: 1% 10%;
+}
+
+.dateRange {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.weekendDates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
