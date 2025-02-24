@@ -1,7 +1,10 @@
 import React, { useState, useRef } from "react";
 import "./WeekdayDateRangePicker.css";
-import { isWeekend, formatDisplayDate, getDaysInMonth } from "./helper";
+import { isWeekend } from "./helper";
 import { useDateRangeSelection } from "../hooks/useDateRangeSelection";
+import Calendar from "./Calendar/Calendar";
+import DateInput from "./DateInput/DateInput";
+import PresetRanges from "./PresetRanges/PresetRanges";
 
 interface WeekdayDateRangePickerProps {
   onChange: (dateRange: [string, string], weekends: string[]) => void;
@@ -10,7 +13,6 @@ interface WeekdayDateRangePickerProps {
 const WeekdayDateRangePicker: React.FC<WeekdayDateRangePickerProps> = ({
   onChange,
 }) => {
-  // Add new state for hover
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSelecting, setIsSelecting] = useState(false);
@@ -43,149 +45,63 @@ const WeekdayDateRangePicker: React.FC<WeekdayDateRangePickerProps> = ({
     }
   };
 
-  const renderCalendarMonth = (monthOffset: number) => {
+  const handleMonthChange = (direction: "prev" | "next") => {
     const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + monthOffset;
-    const days = getDaysInMonth(year, month);
-    const firstDay = new Date(year, month, 1);
-    const emptyDays = (firstDay.getDay() + 6) % 7;
-    const paddingDays = Array(emptyDays).fill(null);
-
-    return (
-      <div className="calendar">
-        <div className="calendar-header">
-          {monthOffset === 0 && (
-            <button onClick={() => setCurrentDate(new Date(year, month - 1))}>
-              &lt;
-            </button>
-          )}
-          <span>
-            {new Date(year, month).toLocaleString("default", {
-              month: "long",
-              year: "numeric",
-            })}
-          </span>
-          {monthOffset === 1 && (
-            <button onClick={() => setCurrentDate(new Date(year, month + 1))}>
-              &gt;
-            </button>
-          )}
-        </div>
-        <div className="calendar-grid">
-          {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Sun"].map((day) => (
-            <div key={day} className="calendar-day-header">
-              {day}
-            </div>
-          ))}
-          {paddingDays.map((_, index) => (
-            <div key={`empty-${index}`} className="calendar-day empty"></div>
-          ))}
-          {days.map((date) => {
-            const isSelected =
-              selectedRange.startDate &&
-              selectedRange.endDate &&
-              date >= selectedRange.startDate &&
-              date <= selectedRange.endDate;
-
-            const isWeekendDay = isWeekend(date);
-
-            const isHoverRange =
-              isSelecting &&
-              selectedRange.startDate &&
-              !selectedRange.endDate &&
-              hoverDate &&
-              ((date >= selectedRange.startDate && date <= hoverDate) ||
-                (date <= selectedRange.startDate && date >= hoverDate));
-
-            const isInRange =
-              selectedRange.startDate &&
-              selectedRange.endDate &&
-              date > selectedRange.startDate &&
-              date < selectedRange.endDate;
-
-            return (
-              <div
-                key={date.toISOString()}
-                className={`calendar-day ${isSelected ? "selected" : ""} ${
-                  isWeekendDay ? "weekend" : ""
-                } ${isInRange ? "in-range" : ""} ${
-                  isHoverRange ? "hover-range" : ""
-                }`}
-                onClick={() => !isWeekendDay && handleDateClick(date)}
-                onMouseEnter={() => !isWeekendDay && setHoverDate(date)}
-                onMouseLeave={() => setHoverDate(null)}
-              >
-                {date.getDate()}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+    const month = currentDate.getMonth();
+    setCurrentDate(
+      new Date(year, direction === "prev" ? month - 1 : month + 1)
     );
+  };
+
+  const handlePresetSelect = (startDate: Date, endDate: Date) => {
+    setSelectedRange({
+      startDate,
+      endDate,
+      autoFetch: true,
+    });
+    setIsOpen(false);
+  };
+
+  const handleConfirm = () => {
+    setSelectedRange((prev: any) => ({ ...prev, autoFetch: true }));
+    setIsOpen(false);
   };
 
   return (
     <div className="picker-container" ref={pickerRef}>
-      <div className="input-trigger" onClick={() => setIsOpen(!isOpen)}>
-        <span>
-          {selectedRange.startDate
-            ? `${formatDisplayDate(
-                selectedRange.startDate
-              )} - ${formatDisplayDate(selectedRange.endDate)}`
-            : "dd/mm/yyyy ~ dd/mm/yyyy"}
-        </span>
-
-        <span className="calendar-icon">
-          <img src="/calendar.png" width={18} height={18} alt="calender" />
-        </span>
-      </div>
+      <DateInput
+        selectedRange={selectedRange}
+        isOpen={isOpen}
+        onToggle={() => setIsOpen(!isOpen)}
+      />
       <div className={`picker-dropdown ${isOpen ? "open" : ""}`}>
         <div className="weekday-date-range-picker">
           <div className="calendars-container">
-            {renderCalendarMonth(0)}
-            {renderCalendarMonth(1)}
+            <Calendar
+              currentDate={currentDate}
+              selectedRange={selectedRange}
+              isSelecting={isSelecting}
+              hoverDate={hoverDate}
+              monthOffset={0}
+              onDateClick={handleDateClick}
+              onDateHover={setHoverDate}
+              onMonthChange={handleMonthChange}
+            />
+            <Calendar
+              currentDate={currentDate}
+              selectedRange={selectedRange}
+              isSelecting={isSelecting}
+              hoverDate={hoverDate}
+              monthOffset={1}
+              onDateClick={handleDateClick}
+              onDateHover={setHoverDate}
+              onMonthChange={handleMonthChange}
+            />
           </div>
-          <div className="predefined-ranges">
-            <button
-              onClick={() => {
-                const today = new Date();
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(today.getDate() - 7);
-                setSelectedRange({
-                  startDate: sevenDaysAgo,
-                  endDate: today,
-                  autoFetch: true,
-                });
-                setIsOpen(false);
-              }}
-            >
-              Last 7 Days
-            </button>
-            <button
-              onClick={() => {
-                const today = new Date();
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(today.getDate() - 30);
-                setSelectedRange({
-                  startDate: sevenDaysAgo,
-                  endDate: today,
-                  autoFetch: true,
-                });
-                setIsOpen(false);
-              }}
-            >
-              Last 30 Days
-            </button>
-            <button
-              onClick={() => {
-                setSelectedRange((prev: any) => ({ ...prev, autoFetch: true }));
-                setIsOpen(false);
-              }}
-              className="ok-button"
-            >
-              OK
-            </button>
-          </div>
+          <PresetRanges
+            onSelectPreset={handlePresetSelect}
+            onConfirm={handleConfirm}
+          />
         </div>
       </div>
     </div>

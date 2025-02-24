@@ -1,0 +1,32 @@
+.input-trigger {
+  position: relative;
+  width: 250px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-trigger:hover {
+  border-color: #007bff;
+}
+
+.input-trigger:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.calendar-icon {
+  display: flex;
+  align-items: center;
+  color: #666;
+}
+
+.calendar-icon:hover {
+  color: #007bff;
+}
