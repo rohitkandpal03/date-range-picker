@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, use } from "react";
 import "./WeekdayDateRangePicker.css";
 import { isWeekend } from "./helper";
 import { useDateRangeSelection } from "../hooks/useDateRangeSelection";
@@ -14,7 +14,12 @@ const WeekdayDateRangePicker: React.FC<WeekdayDateRangePickerProps> = ({
   onChange,
 }) => {
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [leftDate, setLeftDate] = useState(new Date());
+  const [rightDate, setRightDate] = useState(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date;
+  });
   const [isSelecting, setIsSelecting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -45,14 +50,27 @@ const WeekdayDateRangePicker: React.FC<WeekdayDateRangePickerProps> = ({
     }
   };
 
-  const handleMonthChange = (direction: "prev" | "next") => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    setCurrentDate(
-      new Date(year, direction === "prev" ? month - 1 : month + 1)
-    );
+  const handleMonthChange = (direction: "prev" | "next", isLeftCalendar: boolean) => {
+    if (isLeftCalendar) {
+      const year = leftDate.getFullYear();
+      const month = leftDate.getMonth();
+      const newDate = new Date(year, direction === "prev" ? month - 1 : month + 1);
+      
+      // Ensure left calendar doesn't go past right calendar
+      if (newDate < rightDate) {
+        setLeftDate(newDate);
+      }
+    } else {
+      const year = rightDate.getFullYear();
+      const month = rightDate.getMonth();
+      const newDate = new Date(year, direction === "prev" ? month - 1 : month + 1);
+      
+      // Ensure right calendar doesn't go before left calendar
+      if (newDate > leftDate) {
+        setRightDate(newDate);
+      }
+    }
   };
-
   const handlePresetSelect = (startDate: Date, endDate: Date) => {
     setSelectedRange({
       startDate,
@@ -78,24 +96,26 @@ const WeekdayDateRangePicker: React.FC<WeekdayDateRangePickerProps> = ({
         <div className="weekday-date-range-picker">
           <div className="calendars-container">
             <Calendar
-              currentDate={currentDate}
+              currentDate={leftDate}
               selectedRange={selectedRange}
               isSelecting={isSelecting}
               hoverDate={hoverDate}
               monthOffset={0}
               onDateClick={handleDateClick}
               onDateHover={setHoverDate}
-              onMonthChange={handleMonthChange}
+              onMonthChange={(direction) => handleMonthChange(direction, true)}
+              setCurrentDate={setLeftDate}
             />
             <Calendar
-              currentDate={currentDate}
+              currentDate={rightDate}
               selectedRange={selectedRange}
               isSelecting={isSelecting}
               hoverDate={hoverDate}
-              monthOffset={1}
+              monthOffset={0}
               onDateClick={handleDateClick}
               onDateHover={setHoverDate}
-              onMonthChange={handleMonthChange}
+              onMonthChange={(direction) => handleMonthChange(direction, false)}
+              setCurrentDate={setRightDate}
             />
           </div>
           <PresetRanges

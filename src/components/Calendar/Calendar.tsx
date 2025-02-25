@@ -1,6 +1,7 @@
-import React from 'react';
-import { isWeekend, getDaysInMonth } from '../helper';
-import './Calendar.css';
+import React, { Dispatch, SetStateAction } from "react";
+import { isWeekend, getDaysInMonth } from "../helper";
+import MonthYearSelector from "../MonthYearSelector/MonthYearSelector";
+import "./Calendar.css";
 
 interface CalendarProps {
   currentDate: Date;
@@ -13,7 +14,8 @@ interface CalendarProps {
   monthOffset: number;
   onDateClick: (date: Date) => void;
   onDateHover: (date: Date | null) => void;
-  onMonthChange: (direction: 'prev' | 'next') => void;
+  onMonthChange: (direction: "prev" | "next") => void;
+  setCurrentDate: Dispatch<SetStateAction<Date>>;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
@@ -25,32 +27,49 @@ const Calendar: React.FC<CalendarProps> = ({
   onDateClick,
   onDateHover,
   onMonthChange,
+  setCurrentDate,
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + monthOffset;
-  const days = getDaysInMonth(year, month);
-  const firstDay = new Date(year, month, 1);
+  const adjustedDate = new Date(year, month);
+  const days = getDaysInMonth(adjustedDate.getFullYear(), adjustedDate.getMonth());
+  const firstDay = new Date(adjustedDate.getFullYear(), adjustedDate.getMonth(), 1);
   const emptyDays = (firstDay.getDay() + 6) % 7;
   const paddingDays = Array(emptyDays).fill(null);
+
+  const handleMonthYearChange = (year: number, month: number) => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(year);
+    newDate.setMonth(month);
+    setCurrentDate(newDate);
+  };
+
+  const handleMonthChange = (direction: "prev" | "next") => {
+    onMonthChange(direction);
+  };
 
   return (
     <div className="calendar">
       <div className="calendar-header">
-        {monthOffset === 0 && (
-          <button onClick={() => onMonthChange('prev')}>&lt;</button>
-        )}
-        <span>
-          {new Date(year, month).toLocaleString('default', {
-            month: 'long',
-            year: 'numeric',
-          })}
-        </span>
-        {monthOffset === 1 && (
-          <button onClick={() => onMonthChange('next')}>&gt;</button>
-        )}
+        <button 
+          className={`nav-button ${monthOffset === 0 ? 'left' : 'right'}`}
+          onClick={() => handleMonthChange("prev")}
+        >
+          &lt;
+        </button>
+        <MonthYearSelector
+          currentDate={adjustedDate}
+          onMonthYearChange={handleMonthYearChange}
+        />
+        <button 
+          className={`nav-button ${monthOffset === 0 ? 'left' : 'right'}`}
+          onClick={() => handleMonthChange("next")}
+        >
+          &gt;
+        </button>
       </div>
       <div className="calendar-grid">
-        {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Sun'].map((day) => (
+        {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Sun"].map((day) => (
           <div key={day} className="calendar-day-header">
             {day}
           </div>
@@ -84,10 +103,10 @@ const Calendar: React.FC<CalendarProps> = ({
           return (
             <div
               key={date.toISOString()}
-              className={`calendar-day ${isSelected ? 'selected' : ''} ${
-                isWeekendDay ? 'weekend' : ''
-              } ${isInRange ? 'in-range' : ''} ${
-                isHoverRange ? 'hover-range' : ''
+              className={`calendar-day ${isSelected ? "selected" : ""} ${
+                isWeekendDay ? "weekend" : ""
+              } ${isInRange ? "in-range" : ""} ${
+                isHoverRange ? "hover-range" : ""
               }`}
               onClick={() => !isWeekendDay && onDateClick(date)}
               onMouseEnter={() => !isWeekendDay && onDateHover(date)}
